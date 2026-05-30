@@ -47,6 +47,8 @@ if st.button("Analyse starten", type="primary"):
             else:
                 status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via LLM...", state="running")
                 ai_answer = claude_api.frage_claude(user_frage)
+
+                ai_answer = claude_api.frage_claude(user_frage, api_key, selected_llm)
                 
                 st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
                 datenbank.speichere_neue_antwort(user_frage, ai_answer)
