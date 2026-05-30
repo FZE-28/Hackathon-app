@@ -111,11 +111,12 @@ if st.session_state.ai_answer:
     st.markdown("---")
     st.markdown("### 🎨 Visual Blueprints Available")
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
+    
+    if st.button("📦 Da Vinci Blueprint generieren"):
+    st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
+    # Hier ist der verschmolzene Button:
     if st.button("📦 Da Vinci Blueprint generieren"):
         st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
-                # Hier ist der verschmolzene Button:
-                if st.button("📦 Da Vinci Blueprint generieren"):
-                    st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
             
-            else:
-                status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
+    else:
+        status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
