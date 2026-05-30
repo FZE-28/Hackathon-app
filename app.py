@@ -35,7 +35,7 @@ if st.button("Analyse starten", type="primary"):
             
             st.write("🧩 Übersetze Frage für die Datenbank...")
             # SCHRITT 1: Text für Supabase vorbereiten (Gemini Embedding)
-            query_embedding = ki_api.erstelle_vektor(user_frage)
+            query_embedding = gemini_api.erstelle_vektor(user_frage)
             
             if query_embedding:
                 st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
