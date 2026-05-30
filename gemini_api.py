@@ -43,6 +43,7 @@ def generiere_innova_antwort(user_query, cache_vorwissen=None):
     3. Insights (💡) & Mindset (🧠)
     4. Risiko-Radar (⚠️)
     Antworte professionell, präzise und lösungsorientiert.
+    Nutze für den Aktionsplan immer eine strikte Dezimal-Gliederung (z.B. 1.1, 1.2, 2.1).
     """
 
     if cache_vorwissen:
