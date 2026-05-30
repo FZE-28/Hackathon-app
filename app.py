@@ -16,8 +16,9 @@ with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
     api_key = st.text_input("Anthropic API-Key:", type="password", placeholder="sk-ant-...")
     st.markdown("---")
-    st.markdown("🤖 **Modell:** Claude 3.5 Sonnet")
-    st.markdown("🧠 **Cache:** Weaviate DB Aktiv")
+    selected_llm = st.selectbox("Select your LLM-Model:", ["Claude 3.5 Sonnet", "ChatGPT 4o", "Gemini Pro"])
+    st.markdown(f"🤖 **Modell:**{selected_llm}.")
+    st.markdown("🧠 **Cache:** Supabase DB Aktiv")
 
 # 2. Hauptbereich (Haupt-UI)
 st.title("🚀 INNOVA")
