@@ -49,7 +49,7 @@ if st.button("Analyse starten", type="primary"):
                     status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
                     
                     # SCHRITT 3: Neue Antwort von Gemini generieren lassen
-                    ai_answer = ki_api.generiere_innova_antwort(user_frage)
+                    ai_answer = gemini_api.generiere_innova_antwort(user_frage)
                     
                     st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
                     # SCHRITT 4: Neue Idee in Supabase abspeichern
