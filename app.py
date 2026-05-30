@@ -1,6 +1,6 @@
 import streamlit as st
-import datenbank.py  
-import claude_api.py 
+import datenbank
+import claude_api
 
 linke_spalte, rechte_spalte = st.columns(2)
 
