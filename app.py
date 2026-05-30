@@ -113,7 +113,7 @@ if st.session_state.ai_answer:
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
     
     if st.button("📦 Da Vinci Blueprint generieren"):
-    st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
+        st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
     # Hier ist der verschmolzene Button:
     if st.button("📦 Da Vinci Blueprint generieren"):
         st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
