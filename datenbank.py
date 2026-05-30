@@ -1,8 +1,8 @@
 #datenbank.py
 #Mission: Weavite Datenbank für Semantic Catching
 
-def init db():
-"""
+def init_db():
+  """
     Aufgabe: Baue hier die Verbindung zu Weaviate auf (z.B. lokal via Docker oder Weaviate Cloud).
     Rückgabe: Sollte den konfigurierten Datenbank-Client zurückgeben, 
               oder sicherstellen, dass die Collection/Class existiert.
@@ -17,7 +17,7 @@ def suche_aehnliche_frage(prompt_text):
               Wenn nichts gefunden wird -> Gib None zurück.
     """
     pass
-  def speichere_neue_antwort(prompt_text, claude_antwort):
+def speichere_neue_antwort(prompt_text, claude_antwort):
     """
     Aufgabe: Speichere ein neues Paar aus Frage und Antwort in Weaviate.
     Eingabe: prompt_text (String), claude_antwort (String).
