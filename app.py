@@ -2,6 +2,14 @@ import streamlit as st
 import datenbank  
 import claude_api 
 
+linke_spalte, rechte_spalte = st.columns(2)
+
+with linke_spalte:
+    st.write("Hier könnte ein Bild oder eine Erklärung stehen.")
+
+with rechte_spalte:
+    user_frage = st.text_input("Dein Prompt:")
+
 st.title("Product development")
 st.write("Ask your question.")
 user_frage = st.text_input("Enter your prompt here")
