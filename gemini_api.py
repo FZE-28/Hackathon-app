@@ -11,7 +11,7 @@ def erstelle_vektor(text):
     try:
         # Wir nutzen das spezielle Embedding-Modell von Gemini
         result = genai.embed_content(
-            model="models/text-embedding-004",
+            model="models/embedding-001",
             content=text
         )
         # Gibt die Zahlenreihe (den Vektor) zurück
