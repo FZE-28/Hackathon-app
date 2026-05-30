@@ -1,6 +1,6 @@
 import streamlit as st
 import datenbank
-import ki_api
+import gemini_api
 
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
