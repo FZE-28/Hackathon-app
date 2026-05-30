@@ -2,6 +2,18 @@ import streamlit as st
 import datenbank
 import gemini_api
 
+# --- KUGELSICHERES KURZZEITGEDÄCHTNIS ---
+if "ai_answer" not in st.session_state:
+    st.session_state.ai_answer = None
+if "query_embedding" not in st.session_state:
+    st.session_state.query_embedding = None
+if "current_question" not in st.session_state:
+    st.session_state.current_question = None
+if "cache_hit" not in st.session_state:
+    st.session_state.cache_hit = False
+if "bewertung_abgegeben" not in st.session_state:
+    st.session_state.bewertung_abgegeben = False
+
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
