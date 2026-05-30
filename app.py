@@ -1,17 +1,19 @@
 import streamlit as st
-
 import datenbank
-import gemini_api
+import ki_api
 
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
-    api_key = st.text_input("Anthropic API-Key:", type="password", placeholder="sk-ant-...")
+    # Das Design der Partnerin bleibt! Das Feld ist jetzt "disabled", da wir den Key 
+    # profimäßig und unsichtbar über die secrets.toml laden.
+    api_key = st.text_input("API-Key:", placeholder="Wird sicher aus secrets.toml geladen", disabled=True)
     st.markdown("---")
-    selected_llm = st.selectbox("Select your LLM-Model:", ["Claude 3.5 Sonnet", "ChatGPT 4o", "Gemini Pro"])
-    st.markdown(f"🤖 **Modell:** {selected_llm}.")
+    
+    # Dropdown bleibt für die Optik, aber wir forcieren unser schnelles Gemini
+    selected_llm = st.selectbox("Select your LLM-Model:", ["Claude 3.5 Sonnet", "ChatGPT 4o", "Gemini 1.5 Flash (Aktiv)"], index=2)
+    st.markdown(f"🤖 **Modell:** Gemini 1.5 Flash (Vektoren & Text).")
     st.markdown("🧠 **Cache:** Supabase DB Aktiv")
-
 
 # 2. Hauptbereich (Haupt-UI)
 st.title("🚀 INNOVA")
@@ -28,27 +30,34 @@ if st.button("Analyse starten", type="primary"):
     if user_frage.strip() == "":
         st.warning("Bitte gib zuerst eine Frage ein.")
     else:
-        # Visuelles Feedback für den Nutzer
+        # Visuelles Feedback für den Nutzer (von deiner Partnerin)
         with st.status("Verarbeite Anfrage...", expanded=True) as status:
-            st.write("🔍 Durchsuche semantischen Speicher (Vektor-Datenbank)...")
-            found_result = datenbank.suche_aehnliche_frage(user_frage)
             
-            if found_result != None:
-                status.update(label="⚡ Cache Hit! Validierte Antwort geladen.", state="complete")
-                # Anzeige des Ergebnisses in einer eleganten Box
-                st.success(found_result)
-            else:
-                status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via LLM...", state="running")
+            st.write("🧩 Übersetze Frage für die Datenbank...")
+            # SCHRITT 1: Text für Supabase vorbereiten (Gemini Embedding)
+            query_embedding = ki_api.erstelle_vektor(user_frage)
+            
+            if query_embedding:
+                st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
+                # SCHRITT 2: In Supabase suchen
+                found_result, similarity = datenbank.suche_aehnliche_frage(query_embedding)
                 
-                # Nur NOCH EIN Aufruf mit allen drei Parametern!
-                ai_answer = claude_api.frage_claude(user_frage, api_key, selected_llm)
+                if found_result:
+                    status.update(label=f"⚡ Cache Hit! Validierte Antwort geladen (Ähnlichkeit: {similarity*100:.1f}%).", state="complete")
+                    ai_answer = found_result # Wir übernehmen die Antwort aus dem Gedächtnis
+                else:
+                    status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
+                    
+                    # SCHRITT 3: Neue Antwort von Gemini generieren lassen
+                    ai_answer = ki_api.generiere_innova_antwort(user_frage)
+                    
+                    st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
+                    # SCHRITT 4: Neue Idee in Supabase abspeichern
+                    datenbank.speichere_neue_antwort(user_frage, query_embedding, ai_answer)
+                    
+                    status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
                 
-                st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
-                datenbank.speichere_neue_antwort(user_frage, ai_answer)
-                
-                status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
-                
-                # Hochwertige Präsentation der Antwort
+                # Hochwertige Präsentation der Antwort (von deiner Partnerin)
                 st.markdown("### 🎯 Executive Summary")
                 st.info(ai_answer)
                 
@@ -60,3 +69,6 @@ if st.button("Analyse starten", type="primary"):
                 # Hier ist der verschmolzene Button:
                 if st.button("📦 Da Vinci Blueprint generieren"):
                     st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
+            
+            else:
+                status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
