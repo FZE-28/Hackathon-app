@@ -15,6 +15,15 @@ with st.sidebar:
     st.markdown(f"🤖 **Modell:** Gemini 1.5 Flash (Vektoren & Text).")
     st.markdown("🧠 **Cache:** Supabase DB Aktiv")
 
+    anzahl_hits, anzahl_misses = datenbank.hole_metriken()
+    
+    st.markdown("📊 **Live-Performance (Cloud):**")
+    st.metric(label="⚡ Cache-Treffer (Geld gespart)", value=anzahl_hits)
+    st.metric(label="🧠 Gemini Live-Anfragen", value=anzahl_misses)
+    st.markdown("---")
+    
+
+
 # 2. Hauptbereich (Haupt-UI)
 st.title("🚀 INNOVA")
 st.subheader("Die Evolution der Produktentwicklung")
@@ -45,6 +54,7 @@ if st.button("Analyse starten", type="primary"):
                 if found_result:
                     status.update(label=f"⚡ Cache Hit! Validierte Antwort geladen (Ähnlichkeit: {similarity*100:.1f}%).", state="complete")
                     ai_answer = found_result # Wir übernehmen die Antwort aus dem Gedächtnis
+                    datenbank.logge_event('hit')
                 else:
                     status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
                     
@@ -54,6 +64,7 @@ if st.button("Analyse starten", type="primary"):
                     st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
                     # SCHRITT 4: Neue Idee in Supabase abspeichern
                     datenbank.speichere_neue_antwort(user_frage, query_embedding, ai_answer)
+                    datenbank.logge_event('miss')
                     
                     status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
                 
