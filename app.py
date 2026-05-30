@@ -46,8 +46,8 @@ if st.button("Analyse starten", type="primary"):
                 st.success(found_result)
             else:
                 status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via LLM...", state="running")
-                ai_answer = claude_api.frage_claude(user_frage)
-
+                
+                # Nur NOCH EIN Aufruf mit allen drei Parametern!
                 ai_answer = claude_api.frage_claude(user_frage, api_key, selected_llm)
                 
                 st.write("💾 Speichere neue Erkenntnisse in Vektor-Datenbank...")
@@ -59,8 +59,11 @@ if st.button("Analyse starten", type="primary"):
                 st.markdown("### 🎯 Executive Summary")
                 st.info(ai_answer)
                 
-                # Visualisierungs-Vorschau (Die Brücke zu eurem Feature)
+                # Visualisierungs-Vorschau
                 st.markdown("---")
                 st.markdown("### 🎨 Visual Blueprints Available")
-                st.caption("Du kannst dieses Konzept jetzt als interaktives FlowChart oder im Da Vinci Skizzen-Stil visualisieren lassen.")
-                st.button("📦 Da Vinci Blueprint generieren")
+                st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
+                
+                # Hier ist der verschmolzene Button:
+                if st.button("📦 Da Vinci Blueprint generieren"):
+                    st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
