@@ -12,6 +12,7 @@ with st.sidebar:
     st.markdown(f"🤖 **Modell:** {selected_llm}.")
     st.markdown("🧠 **Cache:** Supabase DB Aktiv")
 
+
 # 2. Hauptbereich (Haupt-UI)
 st.title("🚀 INNOVA")
 st.subheader("Die Evolution der Produktentwicklung")
