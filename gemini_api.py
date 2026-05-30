@@ -9,21 +9,22 @@ def erstelle_vektor(text):
     Übersetzer: Wandelt den Text in Zahlen für die Supabase-Datenbank um.
     """
     try:
-        # 1. Wir fragen Google: Welches Embedding-Modell ist für uns verfügbar?
+        # Wir fragen Google: Welches Embedding-Modell ist verfügbar?
         verfuegbares_modell = None
         for m in genai.list_models():
             if 'embedContent' in m.supported_generation_methods:
                 verfuegbares_modell = m.name
-                break # Wir nehmen direkt das erste Modell, das den Test besteht!
+                break
                 
         if not verfuegbares_modell:
-            st.error("Google-Server sagt: Kein Embedding-Modell für diesen API-Key freigeschaltet!")
+            st.error("Google-Server sagt: Kein Embedding-Modell freigeschaltet!")
             return None
             
-        # 2. Wir nutzen exakt dieses gefundene Modell für die Übersetzung
+        # Wir zwingen Google, den Vektor auf 1536 Dimensionen für Supabase zu kürzen!
         result = genai.embed_content(
             model=verfuegbares_modell,
-            content=text
+            content=text,
+            output_dimensionality=1536  # <--- DER MAGISCHE BRIEFKASTEN-FIX
         )
         return result['embedding']
     except Exception as e:
@@ -34,7 +35,6 @@ def generiere_innova_antwort(user_query, cache_vorwissen=None):
     """
     Erzähler: Generiert die strukturierte Produkt-Analyse.
     """
-    # Eure festgelegte Struktur
     system_prompt = """
     Du bist 'Innova', ein High-End-Berater für strategische Produktentwicklung.
     Deine Antworten müssen IMMER in genau 4 Abschnitte gegliedert sein:
@@ -45,18 +45,23 @@ def generiere_innova_antwort(user_query, cache_vorwissen=None):
     Antworte professionell, präzise und lösungsorientiert.
     """
 
-    # Wenn Supabase Vorwissen gefunden hat, geben wir das Gemini mit!
     if cache_vorwissen:
         system_prompt += f"\n\nWICHTIG: Ein ähnliches Projekt wurde bereits analysiert. Nutze dieses Vorwissen als Basis und passe es auf die neue Idee an:\n{cache_vorwissen}"
 
     try:
-        # Wir nutzen das super-schnelle Gemini 1.5 Flash Modell
+        # Wir suchen das korrekte "flash" Modell, egal wie Google es heute nennt
+        verfuegbares_flash_modell = 'gemini-1.5-flash-latest' # Fallback
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods and 'flash' in m.name:
+                verfuegbares_flash_modell = m.name
+                break
+
+        # Wir nutzen das gefundene Modell
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
+            model_name=verfuegbares_flash_modell,
             system_instruction=system_prompt
         )
         
-        # Antwort generieren
         response = model.generate_content(user_query)
         return response.text
     except Exception as e:
