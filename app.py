@@ -1,15 +1,7 @@
 import streamlit as st
 
-# --- TEMPORÄRE DUMMY-FUNKTIONEN FÜR DEINE DEMO ---
-# (Sobald deine Kollegen fertig sind, einfach löschen und durch echte Imports ersetzen)
-class DummyDB:
-    def suche_aehnliche_frage(self, text): return None
-    def speichere_neue_antwort(self, f, a): pass
-class DummyAPI:
-    def frage_claude(self, text): return "Hier steht die innovative, perfekt strukturierte Antwort von Innova."
-datenbank = DummyDB()
-claude_api = DummyAPI()
-# --------------------------------------------------
+import datenbank
+import gemini_api
 
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
