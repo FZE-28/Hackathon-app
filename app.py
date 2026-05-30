@@ -1,15 +1,4 @@
 import streamlit as st
-import chromadb
-
-@st.cache_resource
-def lade_datenbank():
-    client = chromadb.PersistentClient(path="./ki_speicher")
-    collection = client.get_or_create_collection(name="produktentwicklung")
-    return collection
-  
-db = lade_datenbank()
-
-
 
 
 st.title("Product development")
