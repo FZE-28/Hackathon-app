@@ -54,3 +54,33 @@ def speichere_neue_antwort(user_query, query_embedding, ai_response):
     except Exception as e:
         st.error(f"Fehler beim Speichern: {e}")
         return False
+
+def logge_event(event_type):
+    """
+    Speichert im Hintergrund, ob es ein 'hit' (Cache) oder 'miss' (Gemini) war.
+    """
+    supabase = init_db()
+    try:
+        supabase.table('analytics_logs').insert({"event_type": event_type}).execute()
+        return True
+    except Exception as e:
+        # Im Hackathon-Sprint fangen wir den Fehler ab, damit die Haupt-App niemals wegen Analytics abstürzt
+        return False
+
+def hole_metriken():
+    """
+    Zählt die Zeilen in Supabase und gibt (hits, misses) zurück.
+    """
+    supabase = init_db()
+    try:
+        # Wir fragen gezielt nach der Anzahl (count) der jeweiligen Zeilen
+        hits_res = supabase.table('analytics_logs').select('*', count='exact').eq('event_type', 'hit').execute()
+        misses_res = supabase.table('analytics_logs').select('*', count='exact').eq('event_type', 'miss').execute()
+        
+        # Falls keine Daten da sind, standardmäßig 0 zurückgeben
+        hits = hits_res.count if hits_res.count is not None else 0
+        misses = misses_res.count if misses_res.count is not None else 0
+        
+        return hits, misses
+    except Exception as e:
+        return 0, 0
