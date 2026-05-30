@@ -23,7 +23,7 @@ with st.sidebar:
 # 2. Hauptbereich (Haupt-UI)
 st.title("🚀 INNOVA")
 st.subheader("Die Evolution der Produktentwicklung")
-st.write("Verwandle deine kreative Vision in ein marktreifes Konzept.")
+st.write("Verwandle deine kreative Vision in ein marktreifes Konzept. Ohne Limitierung durch Token und Fragen")
 
 st.markdown("---")
 
