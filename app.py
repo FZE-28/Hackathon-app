@@ -117,6 +117,3 @@ if st.session_state.ai_answer:
     # Hier ist der verschmolzene Button:
     if st.button("📦 Da Vinci Blueprint generieren"):
         st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
-            
-    else:
-        status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
