@@ -9,12 +9,22 @@ def erstelle_vektor(text):
     Übersetzer: Wandelt den Text in Zahlen für die Supabase-Datenbank um.
     """
     try:
-        # Wir nutzen das spezielle Embedding-Modell von Gemini
+        # 1. Wir fragen Google: Welches Embedding-Modell ist für uns verfügbar?
+        verfuegbares_modell = None
+        for m in genai.list_models():
+            if 'embedContent' in m.supported_generation_methods:
+                verfuegbares_modell = m.name
+                break # Wir nehmen direkt das erste Modell, das den Test besteht!
+                
+        if not verfuegbares_modell:
+            st.error("Google-Server sagt: Kein Embedding-Modell für diesen API-Key freigeschaltet!")
+            return None
+            
+        # 2. Wir nutzen exakt dieses gefundene Modell für die Übersetzung
         result = genai.embed_content(
-            model="models/embedding-001",
+            model=verfuegbares_modell,
             content=text
         )
-        # Gibt die Zahlenreihe (den Vektor) zurück
         return result['embedding']
     except Exception as e:
         st.error(f"Fehler bei der Vektor-Erstellung: {e}")
