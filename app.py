@@ -61,6 +61,12 @@ for message in st.session_state.messages:
 user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
 
 if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
+    with st.chat_message("user"):
+        st.markdown(user_frage)
+    # ...und in unser Gedächtnis hinten dranhängen (.append)
+    st.session_state.messages.append({"role": "user", "content": user_frage})
+    
+    # ... hier kommt dein ganz normaler, alter Code mit der Vektor-Suche ...
     if user_frage.strip() == "":
         st.warning("Bitte gib zuerst eine Frage ein.")
     else:
@@ -96,6 +102,7 @@ if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
                     datenbank.logge_event('miss')
                     
                     status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
+             st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
             else:
                 status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
 
