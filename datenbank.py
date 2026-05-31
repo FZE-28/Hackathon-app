@@ -84,34 +84,32 @@ def hole_metriken():
         return hits, misses
     except Exception as e:
         return 0, 0
+
 def hole_alle_prompts(suchbegriff=None):
     """
     Lädt alle bisherigen Fragen alphabetisch aus Supabase.
-    Falls ein Suchbegriff eingegeben wurde, wird danach gefiltert.
     """
+    # Wir nutzen eure bereits perfekte und existierende Datenbank-Verbindung!
+    supabase = init_db()
+    
     try:
-        from supabase import create_client, Client
-        import streamlit as st
+        # Abfrage starten
+        abfrage = supabase.table("knowledge_base").select("user_query")
         
-        # Sicherstellen, dass Supabase hier erreichbar ist
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        supabase_client: Client = create_client(url, key)
-        
-        # Wir holen uns alle user_query Einträge aus eurer Tabelle knowledge_base
-        abfrage = supabase_client.table("knowledge_base").select("user_query")
-        
-        # Wenn der Nutzer in der Suchleiste tippt, filtern wir danach
+        # Falls gesucht wird, filtern
         if suchbegriff:
             abfrage = abfrage.ilike("user_query", f"%{suchbegriff}%")
             
         ergebnis = abfrage.execute()
         
-        # Doppelte Einträge löschen (set) und alphabetisch sortieren
+        # Auspacken und sortieren
         alle_fragen = [zeile["user_query"] for zeile in ergebnis.data if zeile.get("user_query")]
         einzigartige_fragen = sorted(list(set(alle_fragen)))
         
         return einzigartige_fragen
+        
     except Exception as e:
-        print(f"Fehler beim Laden der Prompts: {e}")
+        # Jetzt zeigen wir den Fehler rot auf der Webseite an, falls noch einer passiert!
+        import streamlit as st
+        st.error(f"🚨 Datenbank-Lese-Fehler: {e}")
         return []
