@@ -102,7 +102,7 @@ if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
                     datenbank.logge_event('miss')
                     
                     status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
-             st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
+            st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
             else:
                 status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
 
