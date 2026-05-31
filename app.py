@@ -55,6 +55,7 @@ st.markdown("---")
 
 # Eingabebereich in einer sauberen Struktur
 user_frage = st.text_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?", 
+                           value=st.session_state.eingabe_text,
                            placeholder="z.B. Wie konzipiere ich ein Kühlsystem für ein medizinisches Exoskelett?")
 
 if st.button("Analyse starten", type="primary"):
