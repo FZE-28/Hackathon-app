@@ -102,6 +102,12 @@ if st.session_state.ai_answer:
     # Hochwertige Präsentation der Antwort
     st.markdown("### 🎯 Executive Summary")
     st.info(st.session_state.ai_answer)
+
+    st.download_button(
+        label="📥 Innova-Analyse herunterladen", 
+        data=st.session_state.ai_answer, 
+        file_name="innova_analyse.txt" 
+    )
     
     # Bewertungssystem (Taucht nur auf, wenn die Antwort NEU ist und noch nicht bewertet wurde)
     if not st.session_state.cache_hit and not st.session_state.bewertung_abgegeben:
@@ -133,9 +139,6 @@ if st.session_state.ai_answer:
     st.markdown("### 🎨 Visual Blueprints Available")
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
     
-    if st.button("📦 Da Vinci Blueprint generieren"):
-        st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
-    # Hier ist der verschmolzene Button:
     if st.button("📦 Da Vinci Blueprint generieren"):
         st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
 
