@@ -3,6 +3,8 @@ import datenbank
 import gemini_api
 
 # --- KUGELSICHERES KURZZEITGEDÄCHTNIS ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 if "ai_answer" not in st.session_state:
     st.session_state.ai_answer = None
 if "query_embedding" not in st.session_state:
@@ -52,11 +54,9 @@ st.write("Verwandle deine kreative Vision in ein marktreifes Konzept. Ohne Limit
 st.markdown("---")
 
 # Eingabebereich in einer sauberen Struktur
-user_frage = st.text_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?", 
-                           value=st.session_state.eingabe_text,
-                           placeholder="z.B. Wie konzipiere ich ein Kühlsystem für ein medizinisches Exoskelett?")
+user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
 
-if st.button("Analyse starten", type="primary"):
+if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
     if user_frage.strip() == "":
         st.warning("Bitte gib zuerst eine Frage ein.")
     else:
