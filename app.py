@@ -77,21 +77,24 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Eingabebereich in einer sauberen Struktur
-user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
+st.text_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?", 
+              key="eingabe_text",
+              placeholder="z.B. Wie konzipiere ich ein Kühlsystem für ein medizinisches Exoskelett?")
 
-if user_frage: 
+start_clicked = st.button("🚀 Analyse starten", type="primary")
+user_frage = st.session_state.eingabe_text
+
+# Wir starten die Analyse nur, wenn der Button geklickt wurde UND ein Text da ist
+if start_clicked and user_frage.strip() != "": 
     with st.chat_message("user"):
         st.markdown(user_frage)
     
     st.session_state.messages.append({"role": "user", "content": user_frage})
     
-    if user_frage.strip() == "":
-        st.warning("Bitte gib zuerst eine Frage ein.")
-    else:
-        st.session_state.ai_answer = None
-        st.session_state.bewertung_abgegeben = False
-        
-        with st.status("Verarbeite Anfrage...", expanded=True) as status:
+    st.session_state.ai_answer = None
+    st.session_state.bewertung_abgegeben = False
+    
+    with st.status("Verarbeite Anfrage...", expanded=True) as status:
             st.write("🧩 Übersetze Frage für die Datenbank...")
             query_embedding = gemini_api.erstelle_vektor(user_frage)
             
