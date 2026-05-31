@@ -129,3 +129,42 @@ if st.session_state.ai_answer:
     # Hier ist der verschmolzene Button:
     if st.button("📦 Da Vinci Blueprint generieren"):
         st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
+
+# --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
+if st.session_state.show_inspiration:
+    # Wir erstellen ein Layout: Die Haupt-App bekommt 70% Breite, das Inspirations-Rechteck rechts bekommt 30%
+    st.markdown("""
+        <style>
+        /* Ein bisschen CSS-Styling, damit das rechte Rechteck wie ein schickes Panel aussieht */
+        .inspiration-box {
+            background-color: #162447;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #FFD700;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Wir fügen einen Bereich ganz oben rechts ein (Sidebar-Stil im Hauptfenster)
+    st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
+    
+    # Wir schieben ein schickes Info-Fenster ganz nach oben rechts über eine Streamlit-Erweiterung
+    with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
+        # 1. Die Suchleiste für Keywords oben rechts im Kasten
+        suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
+        
+        # Prompts aus Supabase laden
+        prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
+        
+        st.markdown("**Verfügbare Prompts (Alphabetisch):**")
+        
+        if not prompts_aus_db:
+            st.caption("Keine passenden Prompts in der Datenbank gefunden.")
+        else:
+            # 2. Die Prompts untereinander als klickbare Zeilen auflisten
+            for p in prompts_aus_db:
+                # Wir machen jede Frage zu einem kleinen, unauffälligen Button
+                if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
+                    # Wenn der Nutzer draufklickt, schreiben wir es ins Chatfeld
+                    st.session_state.eingabe_text = p
+                    st.rerun() # Seite neu laden, damit der Text im Chatfeld auftaucht
