@@ -84,15 +84,22 @@ def hole_metriken():
         return hits, misses
     except Exception as e:
         return 0, 0
-
 def hole_alle_prompts(suchbegriff=None):
     """
     Lädt alle bisherigen Fragen alphabetisch aus Supabase.
     Falls ein Suchbegriff eingegeben wurde, wird danach gefiltert.
     """
     try:
-        # Wir holen uns alle user_query Einträge aus der Tabelle
-        abfrage = supabase.table("knowledge_base").select("user_query")
+        from supabase import create_client, Client
+        import streamlit as st
+        
+        # Sicherstellen, dass Supabase hier erreichbar ist
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        supabase_client: Client = create_client(url, key)
+        
+        # Wir holen uns alle user_query Einträge aus eurer Tabelle knowledge_base
+        abfrage = supabase_client.table("knowledge_base").select("user_query")
         
         # Wenn der Nutzer in der Suchleiste tippt, filtern wir danach
         if suchbegriff:
@@ -101,7 +108,7 @@ def hole_alle_prompts(suchbegriff=None):
         ergebnis = abfrage.execute()
         
         # Doppelte Einträge löschen (set) und alphabetisch sortieren
-        alle_fragen = [zeile["user_query"] for zeile in ergebnis.data]
+        alle_fragen = [zeile["user_query"] for zeile in ergebnis.data if zeile.get("user_query")]
         einzigartige_fragen = sorted(list(set(alle_fragen)))
         
         return einzigartige_fragen
