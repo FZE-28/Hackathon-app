@@ -37,7 +37,6 @@ with st.sidebar:
     st.markdown("📊 **Live-Performance (Cloud):**")
     st.metric(label="⚡ Cache-Treffer (Geld gespart)", value=anzahl_hits)
     st.metric(label="🧠 Gemini Live-Anfragen", value=anzahl_misses)
-    st.markdown("---")
 
     st.markdown("---")
     if st.button("💡 Prompt-Inspiration öffnen/schließen", use_container_width=True):
