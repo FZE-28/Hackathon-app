@@ -3,25 +3,21 @@ import datenbank
 import gemini_api
 import urllib.parse
 
-# --- KUGELSICHERES KURZZEITGEDÄCHTNIS ---
+# --- 1. KUGELSICHERES SETUP & STATE ---
+st.set_page_config(page_title="INNOVA", page_icon="🚀", layout="wide")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "ai_answer" not in st.session_state:
     st.session_state.ai_answer = None
-if "query_embedding" not in st.session_state:
-    st.session_state.query_embedding = None
 if "current_question" not in st.session_state:
     st.session_state.current_question = None
-if "cache_hit" not in st.session_state:
-    st.session_state.cache_hit = False
-if "bewertung_abgegeben" not in st.session_state:
-    st.session_state.bewertung_abgegeben = False
 if "eingabe_text" not in st.session_state:
     st.session_state.eingabe_text = ""
 if "run_sidebar_prompt" not in st.session_state:
     st.session_state.run_sidebar_prompt = None
 
-# 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
+# --- 2. SIDEBAR (PROFESSIONELLES DASHBOARD) ---
 with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
     api_key = st.text_input("API-Key:", placeholder="Wird sicher aus secrets.toml geladen", disabled=True)
@@ -52,12 +48,8 @@ with st.sidebar:
         file_name="innova_chatverlauf.txt",
         use_container_width=True
     )
-    st.markdown("---")
     
-    # --- DER BRAINSTORM-SCHALTER ---
-    brainstorm_mode = st.toggle("🌌 Brainstorm-Modus aktivieren", help="Wechselt vom strengen Blueprint zu historischer Inspiration und freiem Brainstorming.")
-    
-    # --- NEU: INSPIRATION DIREKT IN DER SEITENLEISTE ---
+    # --- PROMPT-BIBLIOTHEK (VOM KOLLEGEN) ---
     st.markdown("---")
     st.markdown("### 💡 Prompt-Bibliothek")
     suchbegriff = st.text_input("🔍 Suche in alten Prompts:")
@@ -67,151 +59,104 @@ with st.sidebar:
     if not prompts_aus_db:
         st.caption("Keine Prompts gefunden.")
     else:
-        # Wir zeigen die Prompts als kleine Buttons an
         for p in prompts_aus_db:
             if st.button(f"📄 {p[:35]}...", key=f"btn_{p}", help=p):
                 st.session_state.eingabe_text = p
                 st.rerun()
                 
-    # Wenn ein Prompt angeklickt wurde, zeigen wir ein Editier-Feld!
     if st.session_state.eingabe_text:
         st.markdown("**✏️ Prompt anpassen & starten:**")
         edited_prompt = st.text_area("Hier bearbeiten:", value=st.session_state.eingabe_text, height=120)
         
         if st.button("🚀 Aus Seitenleiste starten", type="primary", use_container_width=True):
             st.session_state.run_sidebar_prompt = edited_prompt
-            st.session_state.eingabe_text = "" # Feld danach wieder aufräumen
+            st.session_state.eingabe_text = ""
             st.rerun()
 
 
-# 2. Hauptbereich (Haupt-UI)
+# --- 3. HAUPT-UI ---
 st.title("🚀 INNOVA")
 st.subheader("Die Evolution der Produktentwicklung")
 st.write("Verwandle deine kreative Vision in ein marktreifes Konzept. Ohne Limitierung durch Token und Fragen")
-
 st.markdown("---")
 
-# --- CHAT-HISTORIE ANZEIGEN ---
+# Chat-Historie rendern (Echtes ChatGPT Feeling)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Eingabebereich in einer sauberen Struktur (Design der Partnerin)
-user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
-
-# --- DER MAGISCHE TRICK FÜR DIE SEITENLEISTE ---
-if st.session_state.run_sidebar_prompt:
-    user_frage = st.session_state.run_sidebar_prompt
-    st.session_state.run_sidebar_prompt = None # Danach direkt wieder leeren
+# --- 4. CHAT-LOGIK & EINGABE ---
+# Kombinierter Input: Entweder aus dem Chatfeld ODER aus der Seitenleiste vom Kollegen
+chat_input_text = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
+user_frage = chat_input_text or st.session_state.run_sidebar_prompt
 
 if user_frage: 
-    with st.chat_message("user"):
-        st.markdown(user_frage)
-    
-    st.session_state.messages.append({"role": "user", "content": user_frage})
+    # Seitenleisten-Trigger zurücksetzen
+    st.session_state.run_sidebar_prompt = None
     
     if user_frage.strip() == "":
         st.warning("Bitte gib zuerst eine Frage ein.")
     else:
-        st.session_state.ai_answer = None
-        st.session_state.bewertung_abgegeben = False
+        # 1. User Frage ins UI und Gedächtnis
+        with st.chat_message("user"):
+            st.markdown(user_frage)
+        st.session_state.messages.append({"role": "user", "content": user_frage})
+        st.session_state.current_question = user_frage
         
-        with st.status("Verarbeite Anfrage...", expanded=True) as status:
-            st.write("🧩 Übersetze Frage für die Datenbank...")
-            query_embedding = gemini_api.erstelle_vektor(user_frage)
-            
-            if query_embedding:
-                st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
+        # 2. Innova Antwort generieren (im echten Chat-UI)
+        with st.chat_message("assistant"):
+            with st.status("Verarbeite Anfrage...", expanded=True) as status:
+                st.write("🧩 Übersetze Frage für die Datenbank...")
+                query_embedding = gemini_api.erstelle_vektor(user_frage)
                 
-                # Im Brainstorm-Modus umgehen wir den Cache
-                if brainstorm_mode:
-                    found_result = None
-                    st.write("🌌 Brainstorm-Modus aktiv: Cache wird für kreative Iteration übersprungen.")
-                else:
+                if query_embedding:
+                    st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
                     found_result, similarity = datenbank.suche_aehnliche_frage(query_embedding)
-                
-                if found_result:
-                    status.update(label=f"⚡ Cache Hit! Validierte Antwort geladen (Ähnlichkeit: {similarity*100:.1f}%).", state="complete")
-                    st.session_state.ai_answer = found_result 
-                    st.session_state.cache_hit = True
-                    datenbank.logge_event('hit')
-                else:
-                    status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
                     
-                    query_for_api = user_frage
-                    if brainstorm_mode:
-                        query_for_api = f"WICHTIG: Kreativer Brainstorming-Modus! 1. Nenne EINEN historischen Meilenstein zu '{user_frage}' in maximal 2 Sätzen. 2. Biete mir danach exakt 3 radikal neue, visionäre Richtungen als kurze Stichpunkte an, aus denen ich für das weitere Brainstorming wählen kann. Keine langen Texte!"
-                    
-                    ai_answer = gemini_api.generiere_innova_antwort(query_for_api)
-                    
-                    st.write("💾 Lege Antwort zur Überprüfung in den Zwischenspeicher...")
-                    st.session_state.ai_answer = ai_answer
-                    st.session_state.query_embedding = query_embedding
-                    st.session_state.current_question = user_frage
-                    st.session_state.cache_hit = False
-                    
-                    if not brainstorm_mode:
+                    if found_result:
+                        status.update(label=f"⚡ Cache Hit! Validierte Antwort geladen (Ähnlichkeit: {similarity*100:.1f}%).", state="complete")
+                        ai_answer = found_result 
+                        datenbank.logge_event('hit')
+                    else:
+                        status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
+                        ai_answer = gemini_api.generiere_innova_antwort(user_frage)
+                        
+                        st.write("💾 Speichere neues Wissen direkt in Supabase...")
+                        # Für den Pitch: Wir speichern direkt, um den lästigen Bewertungs-Klick zu sparen!
+                        datenbank.speichere_neue_antwort(user_frage, query_embedding, ai_answer)
                         datenbank.logge_event('miss')
+                        
+                        status.update(label="✨ Analyse erfolgreich abgeschlossen & gelernt!", state="complete")
                     
-                    status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
-                
-                st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
-            
-            else:
-                status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
+                    # Antwort sofort im Chat-Fenster anzeigen
+                    st.markdown(ai_answer)
+                    
+                    # Antwort in den Rucksack packen
+                    st.session_state.ai_answer = ai_answer
+                    st.session_state.messages.append({"role": "assistant", "content": ai_answer})
+                else:
+                    status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
 
 
-# --- NEUER ABSCHNITT: ANZEIGE & BEWERTUNG ---
+# --- 5. VISUELLE WERKZEUGE (Nur anzeigen, wenn es eine aktuelle Analyse gibt) ---
 if st.session_state.ai_answer:
-    
-    st.markdown("### 🎯 Executive Summary")
-    st.info(st.session_state.ai_answer)
-
-    st.download_button(
-        label="📥 Aktuelle Analyse herunterladen", 
-        data=st.session_state.ai_answer, 
-        file_name="innova_analyse.txt" 
-    )
-    
-    if not st.session_state.cache_hit and not st.session_state.bewertung_abgegeben and not brainstorm_mode:
-        st.markdown("---")
-        st.markdown("### 💬 Qualitätskontrolle: Soll Innova diese Antwort lernen?")
-        
-        bewertung = st.radio("Wie gut ist diese Analyse?", 
-                             ["yes (Sehr gut)", "neutral (Akzeptabel)", "no (Unbrauchbar/Falsch)"], 
-                             horizontal=True)
-        
-        if st.button("Auswahl bestätigen & Logik ausführen"):
-            st.session_state.bewertung_abgegeben = True
-            
-            if "no" in bewertung:
-                st.error("❌ Innova verwirft diese Antwort. Sie wird NICHT in Supabase gespeichert.")
-            else:
-                datenbank.speichere_neue_antwort(
-                    st.session_state.current_question, 
-                    st.session_state.query_embedding, 
-                    st.session_state.ai_answer
-                )
-                st.success(f"💾 Innova hat gelernt! Antwort als '{bewertung.split()[0]}' in Supabase gesichert.")
-            
-            st.rerun()
-
     st.markdown("---")
-    st.markdown("### 🎨 Visual Blueprints Available")
+    st.markdown("### 🎨 INNOVA Visualisierungs-Werkzeuge")
     
     col1, col2 = st.columns(2)
     
-    # --- LINKE SPALTE: BILDGENERIERUNG ---
+    # --- LINKE SPALTE: BILDGENERIERUNG (REPARIERT) ---
     with col1:
         st.markdown("**🖼️ Konzept-Skizze**")
-        if st.button("📦 Da Vinci Blueprint (BILD) generieren", use_container_width=True):
-            with st.spinner("Da Vinci malt dein Konzept..."):
+        st.caption("Erstellt eine technische Blueprint-Zeichnung deines Produkts.")
+        if st.button("📦 Technischen Blueprint generieren", use_container_width=True):
+            with st.spinner("Zeichne Blueprint..."):
                 try:
-                    bild_prompt = f"Leonardo da Vinci sketch of {st.session_state.current_question}, detailed mechanics, sepia, technical drawing, high resolution"
+                    # REPARIERTER PROMPT: Zeichnet das Produkt, nicht Leonardo Da Vinci!
+                    bild_prompt = f"Technical engineering patent blueprint drawing of {st.session_state.current_question}, highly detailed schematic, vintage sepia style, no text"
                     encoded_prompt = urllib.parse.quote(bild_prompt)
                     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true"
                     
-                    # Der HTML Trick: Crasht niemals, weil der Browser das Bild lädt, nicht Streamlit!
                     st.markdown(f'<img src="{image_url}" width="100%" style="border-radius: 10px; border: 2px solid #ccc;">', unsafe_allow_html=True)
                 except Exception as e:
                     st.error("Bild konnte nicht geladen werden.")
@@ -219,6 +164,7 @@ if st.session_state.ai_answer:
     # --- RECHTE SPALTE: DIAGRAMME ---
     with col2:
         st.markdown("**🧩 Architektur & Prozess**")
+        st.caption("Generiert Code für Mindmaps oder Flussdiagramme.")
         diagramm_typ = st.radio("Typ:", ["Mindmap (Struktur)", "Flussdiagramm (Prozess)"], horizontal=True)
         
         if st.button("Diagramm zeichnen", use_container_width=True):
@@ -230,6 +176,7 @@ if st.session_state.ai_answer:
                 
                 dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
                 
+                # Robustes Cleanup für Graphviz
                 if "```" in dot_code:
                     try:
                         dot_code = dot_code.split("```")[1]
@@ -238,13 +185,15 @@ if st.session_state.ai_answer:
                     except:
                         pass
                 
-                st.graphviz_chart(dot_code)
-                
-                # --- NEU: DOWNLOAD FÜR DAS DIAGRAMM ---
-                st.download_button(
-                    label="📥 Diagramm-Code (DOT) speichern",
-                    data=dot_code,
-                    file_name="innova_architektur.dot",
-                    mime="text/plain",
-                    help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
-                )
+                try:
+                    st.graphviz_chart(dot_code)
+                    
+                    st.download_button(
+                        label="📥 Diagramm-Code (DOT) speichern",
+                        data=dot_code,
+                        file_name="innova_architektur.dot",
+                        mime="text/plain",
+                        help="Diesen Code kannst du auf 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
+                    )
+                except Exception as e:
+                    st.error("Die KI hat leider einen ungültigen Diagramm-Code erzeugt. Bitte versuche es noch einmal.")
