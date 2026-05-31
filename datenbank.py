@@ -84,3 +84,27 @@ def hole_metriken():
         return hits, misses
     except Exception as e:
         return 0, 0
+
+def hole_alle_prompts(suchbegriff=None):
+    """
+    Lädt alle bisherigen Fragen alphabetisch aus Supabase.
+    Falls ein Suchbegriff eingegeben wurde, wird danach gefiltert.
+    """
+    try:
+        # Wir holen uns alle user_query Einträge aus der Tabelle
+        abfrage = supabase.table("knowledge_base").select("user_query")
+        
+        # Wenn der Nutzer in der Suchleiste tippt, filtern wir danach
+        if suchbegriff:
+            abfrage = abfrage.ilike("user_query", f"%{suchbegriff}%")
+            
+        ergebnis = abfrage.execute()
+        
+        # Doppelte Einträge löschen (set) und alphabetisch sortieren
+        alle_fragen = [zeile["user_query"] for zeile in ergebnis.data]
+        einzigartige_fragen = sorted(list(set(alle_fragen)))
+        
+        return einzigartige_fragen
+    except Exception as e:
+        print(f"Fehler beim Laden der Prompts: {e}")
+        return []
