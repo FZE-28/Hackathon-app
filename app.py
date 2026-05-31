@@ -156,26 +156,4 @@ if st.session_state.show_inspiration:
         </style>
     """, unsafe_allow_html=True)
     
-    # Wir fügen einen Bereich ganz oben rechts ein (Sidebar-Stil im Hauptfenster)
-    st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
-    
-    # Wir schieben ein schickes Info-Fenster ganz nach oben rechts über eine Streamlit-Erweiterung
-    with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
-        # 1. Die Suchleiste für Keywords oben rechts im Kasten
-        suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
-        
-        # Prompts aus Supabase laden
-        prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
-        
-        st.markdown("**Verfügbare Prompts (Alphabetisch):**")
-        
-        if not prompts_aus_db:
-            st.caption("Keine passenden Prompts in der Datenbank gefunden.")
-        else:
-            # 2. Die Prompts untereinander als klickbare Zeilen auflisten
-            for p in prompts_aus_db:
-                # Wir machen jede Frage zu einem kleinen, unauffälligen Button
-                if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
-                    # Wenn der Nutzer draufklickt, schreiben wir es ins Chatfeld
-                    st.session_state.eingabe_text = p
-                    st.rerun() # Seite neu laden, damit der Text im Chatfeld auftaucht
+
