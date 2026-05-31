@@ -167,7 +167,7 @@ if st.session_state.show_inspiration:
         # Prompts aus Supabase laden
         prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
         
-        st.markdown("**Verfügbare Prompts (Alphabetisch):**")
+        st.markdown("**Verfügbare Prompts :**")
         
         if not prompts_aus_db:
             st.caption("Keine passenden Prompts in der Datenbank gefunden.")
