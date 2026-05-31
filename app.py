@@ -53,6 +53,10 @@ st.write("Verwandle deine kreative Vision in ein marktreifes Konzept. Ohne Limit
 
 st.markdown("---")
 
+# --- CHAT-HISTORIE ANZEIGEN ---
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]): # "user" oder "assistant"
+        st.markdown(message["content"])
 # Eingabebereich in einer sauberen Struktur
 user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
 
