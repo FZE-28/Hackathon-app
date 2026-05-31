@@ -40,10 +40,9 @@ with st.sidebar:
     st.markdown("---")
 
     st.markdown("---")
-        if st.button("💡 Prompt-Inspiration öffnen/schließen", use_container_width=True):
-            st.session_state.show_inspiration = not st.session_state.show_inspiration
-            st.rerun()
-    
+    if st.button("💡 Prompt-Inspiration öffnen/schließen", use_container_width=True):
+        st.session_state.show_inspiration = not st.session_state.show_inspiration
+        st.rerun()
 
 
 # 2. Hauptbereich (Haupt-UI)
