@@ -161,51 +161,51 @@ if st.session_state.ai_answer:
     st.markdown("### 🎨 Visual Blueprints Available")
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
     
+    import urllib.parse # WICHTIG: Das brauchen wir, um den Text für den Bild-Link umzuwandeln
+
     col1, col2 = st.columns(2)
     
+    # --- LINKE SPALTE: BILDGENERIERUNG ---
     with col1:
-        if st.button("📦 Da Vinci Blueprint (Text)"):
-            st.code("Leonardo da Vinci Skizze, Sepia, detaillierte Mechanik, fotorealistische Schraffur: " + st.session_state.current_question)
-            
-    with col2:
-        if st.button("🧩 Als Mindmap visualisieren"):
-            with st.spinner("Zeichne Architektur..."):
-                # Wir schicken einen geheimen Prompt an Gemini, um Graphviz-Code zu bekommen
-                graph_prompt = f"Erstelle ein einfaches Mindmap/Flussdiagramm im Graphviz DOT-Format für folgendes Konzept: {st.session_state.current_question}. Antworte NUR mit dem reinen DOT-Code (startend mit 'digraph G {{'), ohne Markdown-Blöcke oder Erklärungen."
+        st.markdown("**🖼️ Konzept-Skizze**")
+        st.caption("Erstellt ein fotorealistisches Bild deiner Idee.")
+        if st.button("📦 Da Vinci Blueprint (BILD) generieren", use_container_width=True):
+            with st.spinner("Da Vinci malt dein Konzept (das dauert ca. 5 Sekunden)..."):
+                # Wir bauen den perfekten englischen Prompt für den Bildgenerator
+                bild_prompt = f"Leonardo da Vinci sketch of {st.session_state.current_question}, detailed mechanics, sepia, technical drawing, high resolution"
+                # Wir wandeln Leerzeichen in %20 um, damit es ein gültiger Link wird
+                encoded_prompt = urllib.parse.quote(bild_prompt)
+                # Hackathon-Trick: Kostenloser Bildgenerator über URL!
+                image_url = f"[https://image.pollinations.ai/prompt/](https://image.pollinations.ai/prompt/){encoded_prompt}?width=800&height=600&nologo=true"
                 
-                # Wir nutzen eure bestehende Gemini-Funktion für die API-Anfrage
+                # Bild direkt in Streamlit anzeigen
+                st.image(image_url, caption=f"Generierte Skizze: {st.session_state.current_question}")
+                
+    # --- RECHTE SPALTE: DIAGRAMME ---
+    with col2:
+        st.markdown("**🧩 Architektur & Prozess**")
+        # NEU: Der Nutzer darf wählen!
+        diagramm_typ = st.radio("Diagramm-Typ:", ["Mindmap (Struktur)", "Flussdiagramm (Prozess)"], horizontal=True)
+        
+        if st.button("Diagramm zeichnen", use_container_width=True):
+            with st.spinner(f"Erstelle detaillierte(s) {diagramm_typ}..."):
+                
+                # Wir passen den Prompt extrem an, je nachdem was gewählt wurde
+                if "Mindmap" in diagramm_typ:
+                    graph_prompt = f"Erstelle eine SEHR detaillierte Mindmap im Graphviz DOT-Format für das Konzept: {st.session_state.current_question}. Erstelle einen zentralen Knoten und fächere ihn in mindestens 4 Hauptkategorien und jeweils 3 Unterkategorien auf. Nutze 'node [shape=box, style=filled, color=lightblue]'. Antworte NUR mit dem DOT-Code."
+                else:
+                    graph_prompt = f"Erstelle ein SEHR detailliertes Flussdiagramm im Graphviz DOT-Format, das den Prozess zur Entwicklung von: {st.session_state.current_question} beschreibt. Zeige Start, Prozess-Schritte (Rechtecke) und mindestens 2 Entscheidungswege (Rauten 'shape=diamond'). Antworte NUR mit dem DOT-Code."
+                
                 dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
                 
-                # Zeichnet das Diagramm nativ in Streamlit!
+                # Filter: Falls Gemini aus Versehen ```dot an den Anfang schreibt, schneiden wir das ab!
+                if "```" in dot_code:
+                    try:
+                        dot_code = dot_code.split("```")[1]
+                        if dot_code.startswith("dot"):
+                            dot_code = dot_code[3:]
+                    except:
+                        pass
+                
+                # Zeichnet das detaillierte Diagramm
                 st.graphviz_chart(dot_code)
-
-
-# --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
-if st.session_state.show_inspiration:
-    st.markdown("""
-        <style>
-        .inspiration-box {
-            background-color: #162447;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 3px solid #FFD700;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
-    
-    with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
-        suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
-        
-        prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
-        
-        st.markdown("**Verfügbare Prompts :**")
-        
-        if not prompts_aus_db:
-            st.caption("Keine passenden Prompts in der Datenbank gefunden.")
-        else:
-            for p in prompts_aus_db:
-                if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
-                    st.session_state.eingabe_text = p
-                    st.rerun()
