@@ -24,12 +24,9 @@ if "eingabe_text" not in st.session_state:
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
-    # Das Design der Partnerin bleibt! Das Feld ist jetzt "disabled", da wir den Key 
-    # profimäßig und unsichtbar über die secrets.toml laden.
     api_key = st.text_input("API-Key:", placeholder="Wird sicher aus secrets.toml geladen", disabled=True)
     st.markdown("---")
     
-    # Dropdown bleibt für die Optik, aber wir forcieren unser schnelles Gemini
     selected_llm = st.selectbox("Select your LLM-Model:", ["Claude 3.5 Sonnet", "ChatGPT 4o", "Gemini 1.5 Flash (Aktiv)"], index=2)
     st.markdown(f"🤖 **Modell:** Gemini 1.5 Flash (Vektoren & Text).")
     st.markdown("🧠 **Cache:** Supabase DB Aktiv")
@@ -40,6 +37,11 @@ with st.sidebar:
     st.metric(label="⚡ Cache-Treffer (Geld gespart)", value=anzahl_hits)
     st.metric(label="🧠 Gemini Live-Anfragen", value=anzahl_misses)
 
+    st.markdown("---")
+    
+    # --- NEU: DER BRAINSTORM-SCHALTER ---
+    brainstorm_mode = st.toggle("🌌 Brainstorm-Modus aktivieren", help="Wechselt vom strengen Blueprint zu historischer Inspiration und freiem Brainstorming.")
+    
     st.markdown("---")
     if st.button("💡 Prompt-Inspiration öffnen/schließen", use_container_width=True):
         st.session_state.show_inspiration = not st.session_state.show_inspiration
@@ -55,22 +57,21 @@ st.markdown("---")
 
 # --- CHAT-HISTORIE ANZEIGEN ---
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]): # "user" oder "assistant"
+    with st.chat_message(message["role"]):
         st.markdown(message["content"])
+
 # Eingabebereich in einer sauberen Struktur
 user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
 
-if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
+if user_frage: 
     with st.chat_message("user"):
         st.markdown(user_frage)
-    # ...und in unser Gedächtnis hinten dranhängen (.append)
+    
     st.session_state.messages.append({"role": "user", "content": user_frage})
     
-    # ... hier kommt dein ganz normaler, alter Code mit der Vektor-Suche ...
     if user_frage.strip() == "":
         st.warning("Bitte gib zuerst eine Frage ein.")
     else:
-        # WICHTIG: Alten Speicher zurücksetzen bei neuer Frage
         st.session_state.ai_answer = None
         st.session_state.bewertung_abgegeben = False
         
@@ -80,37 +81,50 @@ if user_frage: # Das bedeutet: "Wenn der Nutzer Enter gedrückt hat..."
             
             if query_embedding:
                 st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
-                found_result, similarity = datenbank.suche_aehnliche_frage(query_embedding)
+                
+                # Im Brainstorm-Modus umgehen wir den strengen Cache am besten, damit frische Ideen kommen
+                if brainstorm_mode:
+                    found_result = None
+                    st.write("🌌 Brainstorm-Modus aktiv: Cache wird für kreative Iteration übersprungen.")
+                else:
+                    found_result, similarity = datenbank.suche_aehnliche_frage(query_embedding)
                 
                 if found_result:
                     status.update(label=f"⚡ Cache Hit! Validierte Antwort geladen (Ähnlichkeit: {similarity*100:.1f}%).", state="complete")
-                    
-                    # Antwort für die Anzeige im Gedächtnis speichern
                     st.session_state.ai_answer = found_result 
                     st.session_state.cache_hit = True
                     datenbank.logge_event('hit')
                 else:
                     status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
-                    ai_answer = gemini_api.generiere_innova_antwort(user_frage)
+                    
+                    # --- NEU: DIE MODUS-WEICHE FÜR GEMINI ---
+                    query_for_api = user_frage
+                    if brainstorm_mode:
+                        query_for_api = f"WICHTIG: Nutze den kreativen Brainstorming-Modus! Ignoriere den strikten 4-Punkte-Blueprint. Nenne historische Meilensteine und Erfindungen zum Thema '{user_frage}' und brainstorme darauf aufbauend völlig neue, visionäre Schnittstellen und Konzepte für die Zukunft."
+                    
+                    ai_answer = gemini_api.generiere_innova_antwort(query_for_api)
                     
                     st.write("💾 Lege Antwort zur Überprüfung in den Zwischenspeicher...")
-                    # HIER IST DIE ÄNDERUNG: Wir speichern noch nicht in Supabase, sondern nur ins Gedächtnis!
                     st.session_state.ai_answer = ai_answer
                     st.session_state.query_embedding = query_embedding
                     st.session_state.current_question = user_frage
                     st.session_state.cache_hit = False
-                    datenbank.logge_event('miss')
+                    
+                    if not brainstorm_mode:
+                        datenbank.logge_event('miss')
                     
                     status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
-            st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
+                
+                # HIER IST DIE KORRIGIERTE EINRÜCKUNG!
+                st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
+            
             else:
                 status.update(label="❌ Fehler: Konnte KI nicht erreichen.", state="error")
 
 
-# --- NEUER ABSCHNITT: ANZEIGE & BEWERTUNG (Unabhängig vom Analyse-Button) ---
+# --- NEUER ABSCHNITT: ANZEIGE & BEWERTUNG ---
 if st.session_state.ai_answer:
     
-    # Hochwertige Präsentation der Antwort
     st.markdown("### 🎯 Executive Summary")
     st.info(st.session_state.ai_answer)
 
@@ -120,8 +134,7 @@ if st.session_state.ai_answer:
         file_name="innova_analyse.txt" 
     )
     
-    # Bewertungssystem (Taucht nur auf, wenn die Antwort NEU ist und noch nicht bewertet wurde)
-    if not st.session_state.cache_hit and not st.session_state.bewertung_abgegeben:
+    if not st.session_state.cache_hit and not st.session_state.bewertung_abgegeben and not brainstorm_mode:
         st.markdown("---")
         st.markdown("### 💬 Qualitätskontrolle: Soll Innova diese Antwort lernen?")
         
@@ -135,7 +148,6 @@ if st.session_state.ai_answer:
             if "no" in bewertung:
                 st.error("❌ Innova verwirft diese Antwort. Sie wird NICHT in Supabase gespeichert.")
             else:
-                # Nur bei yes oder neutral wird die echte Datenbank-Funktion ausgelöst
                 datenbank.speichere_neue_antwort(
                     st.session_state.current_question, 
                     st.session_state.query_embedding, 
@@ -143,9 +155,8 @@ if st.session_state.ai_answer:
                 )
                 st.success(f"💾 Innova hat gelernt! Antwort als '{bewertung.split()[0]}' in Supabase gesichert.")
             
-            st.rerun() # Lädt die App kurz neu, um die Button-Logik sauber abzuschließen
+            st.rerun()
 
-    # Visualisierungs-Vorschau
     st.markdown("---")
     st.markdown("### 🎨 Visual Blueprints Available")
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
@@ -156,10 +167,8 @@ if st.session_state.ai_answer:
 
 # --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
 if st.session_state.show_inspiration:
-    # Wir erstellen ein Layout: Die Haupt-App bekommt 70% Breite, das Inspirations-Rechteck rechts bekommt 30%
     st.markdown("""
         <style>
-        /* Ein bisschen CSS-Styling, damit das rechte Rechteck wie ein schickes Panel aussieht */
         .inspiration-box {
             background-color: #162447;
             padding: 15px;
@@ -169,15 +178,11 @@ if st.session_state.show_inspiration:
         </style>
     """, unsafe_allow_html=True)
     
-    # Wir fügen einen Bereich ganz oben rechts ein (Sidebar-Stil im Hauptfenster)
     st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
     
-    # Wir schieben ein schickes Info-Fenster ganz nach oben rechts über eine Streamlit-Erweiterung
     with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
-        # 1. Die Suchleiste für Keywords oben rechts im Kasten
         suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
         
-        # Prompts aus Supabase laden
         prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
         
         st.markdown("**Verfügbare Prompts :**")
@@ -185,11 +190,7 @@ if st.session_state.show_inspiration:
         if not prompts_aus_db:
             st.caption("Keine passenden Prompts in der Datenbank gefunden.")
         else:
-            # 2. Die Prompts untereinander als klickbare Zeilen auflisten
             for p in prompts_aus_db:
-                # Wir machen jede Frage zu einem kleinen, unauffälligen Button
                 if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
-                    # Wenn der Nutzer draufklickt, schreiben wir es ins Chatfeld
                     st.session_state.eingabe_text = p
-                    st.rerun() # Seite neu laden, damit der Text im Chatfeld auftaucht
-
+                    st.rerun()
