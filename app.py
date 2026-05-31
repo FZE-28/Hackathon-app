@@ -1,6 +1,7 @@
 import streamlit as st
 import datenbank
 import gemini_api
+import urllib.parse
 
 # --- KUGELSICHERES KURZZEITGEDÄCHTNIS ---
 if "messages" not in st.session_state:
@@ -39,7 +40,22 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # --- NEU: DER BRAINSTORM-SCHALTER ---
+    # --- NEU: CHAT-VERLAUF EXPORTIEREN ---
+    st.markdown("💾 **Session exportieren**")
+    chat_export = ""
+    for msg in st.session_state.messages:
+        rolle = "Du" if msg["role"] == "user" else "Innova"
+        chat_export += f"[{rolle}]: {msg['content']}\n\n"
+        
+    st.download_button(
+        label="📥 Gesamten Chat herunterladen",
+        data=chat_export,
+        file_name="innova_chatverlauf.txt",
+        use_container_width=True
+    )
+    st.markdown("---")
+    
+    # --- DER BRAINSTORM-SCHALTER ---
     brainstorm_mode = st.toggle("🌌 Brainstorm-Modus aktivieren", help="Wechselt vom strengen Blueprint zu historischer Inspiration und freiem Brainstorming.")
     
     st.markdown("---")
@@ -82,7 +98,7 @@ if user_frage:
             if query_embedding:
                 st.write("🔍 Durchsuche semantischen Speicher (Supabase Vektor-DB)...")
                 
-                # Im Brainstorm-Modus umgehen wir den strengen Cache am besten, damit frische Ideen kommen
+                # Im Brainstorm-Modus umgehen wir den Cache
                 if brainstorm_mode:
                     found_result = None
                     st.write("🌌 Brainstorm-Modus aktiv: Cache wird für kreative Iteration übersprungen.")
@@ -97,7 +113,6 @@ if user_frage:
                 else:
                     status.update(label="🧠 Cache Miss. Generiere neue Echtzeit-Analyse via Gemini...", state="running")
                     
-                    # --- NEU: DIE MODUS-WEICHE FÜR GEMINI ---
                     query_for_api = user_frage
                     if brainstorm_mode:
                         query_for_api = f"WICHTIG: Kreativer Brainstorming-Modus! 1. Nenne EINEN historischen Meilenstein zu '{user_frage}' in maximal 2 Sätzen. 2. Biete mir danach exakt 3 radikal neue, visionäre Richtungen als kurze Stichpunkte an, aus denen ich für das weitere Brainstorming wählen kann. Keine langen Texte!"
@@ -115,7 +130,6 @@ if user_frage:
                     
                     status.update(label="✨ Analyse erfolgreich abgeschlossen!", state="complete")
                 
-                # HIER IST DIE KORRIGIERTE EINRÜCKUNG!
                 st.session_state.messages.append({"role": "assistant", "content": st.session_state.ai_answer})
             
             else:
@@ -129,7 +143,7 @@ if st.session_state.ai_answer:
     st.info(st.session_state.ai_answer)
 
     st.download_button(
-        label="📥 Innova-Analyse herunterladen", 
+        label="📥 Aktuelle Analyse herunterladen", 
         data=st.session_state.ai_answer, 
         file_name="innova_analyse.txt" 
     )
@@ -159,46 +173,38 @@ if st.session_state.ai_answer:
 
     st.markdown("---")
     st.markdown("### 🎨 Visual Blueprints Available")
-    st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
     
-    import urllib.parse # WICHTIG: Das brauchen wir, um den Text für den Bild-Link umzuwandeln
-
     col1, col2 = st.columns(2)
     
     # --- LINKE SPALTE: BILDGENERIERUNG ---
     with col1:
         st.markdown("**🖼️ Konzept-Skizze**")
-        st.caption("Erstellt ein fotorealistisches Bild deiner Idee.")
         if st.button("📦 Da Vinci Blueprint (BILD) generieren", use_container_width=True):
-            with st.spinner("Da Vinci malt dein Konzept (das dauert ca. 5 Sekunden)..."):
-                # Wir bauen den perfekten englischen Prompt für den Bildgenerator
-                bild_prompt = f"Leonardo da Vinci sketch of {st.session_state.current_question}, detailed mechanics, sepia, technical drawing, high resolution"
-                # Wir wandeln Leerzeichen in %20 um, damit es ein gültiger Link wird
-                encoded_prompt = urllib.parse.quote(bild_prompt)
-                # Hackathon-Trick: Kostenloser Bildgenerator über URL!
-                image_url = f"[https://image.pollinations.ai/prompt/](https://image.pollinations.ai/prompt/){encoded_prompt}?width=800&height=600&nologo=true"
-                
-                # Bild direkt in Streamlit anzeigen
-                st.image(image_url, caption=f"Generierte Skizze: {st.session_state.current_question}")
+            with st.spinner("Da Vinci malt dein Konzept..."):
+                try:
+                    bild_prompt = f"Leonardo da Vinci sketch of {st.session_state.current_question}, detailed mechanics, sepia, technical drawing, high resolution"
+                    encoded_prompt = urllib.parse.quote(bild_prompt)
+                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true"
+                    
+                    # Der HTML Trick: Crasht niemals, weil der Browser das Bild lädt, nicht Streamlit!
+                    st.markdown(f'<img src="{image_url}" width="100%" style="border-radius: 10px; border: 2px solid #ccc;">', unsafe_allow_html=True)
+                except Exception as e:
+                    st.error("Bild konnte nicht geladen werden.")
                 
     # --- RECHTE SPALTE: DIAGRAMME ---
     with col2:
         st.markdown("**🧩 Architektur & Prozess**")
-        # NEU: Der Nutzer darf wählen!
-        diagramm_typ = st.radio("Diagramm-Typ:", ["Mindmap (Struktur)", "Flussdiagramm (Prozess)"], horizontal=True)
+        diagramm_typ = st.radio("Typ:", ["Mindmap (Struktur)", "Flussdiagramm (Prozess)"], horizontal=True)
         
         if st.button("Diagramm zeichnen", use_container_width=True):
-            with st.spinner(f"Erstelle detaillierte(s) {diagramm_typ}..."):
-                
-                # Wir passen den Prompt extrem an, je nachdem was gewählt wurde
+            with st.spinner(f"Erstelle {diagramm_typ}..."):
                 if "Mindmap" in diagramm_typ:
-                    graph_prompt = f"Erstelle eine SEHR detaillierte Mindmap im Graphviz DOT-Format für das Konzept: {st.session_state.current_question}. Erstelle einen zentralen Knoten und fächere ihn in mindestens 4 Hauptkategorien und jeweils 3 Unterkategorien auf. Nutze 'node [shape=box, style=filled, color=lightblue]'. Antworte NUR mit dem DOT-Code."
+                    graph_prompt = f"Erstelle eine detaillierte Mindmap im Graphviz DOT-Format für das Konzept: {st.session_state.current_question}. Erstelle einen zentralen Knoten und fächere ihn in mindestens 4 Kategorien auf. Antworte NUR mit dem DOT-Code (startend mit digraph)."
                 else:
-                    graph_prompt = f"Erstelle ein SEHR detailliertes Flussdiagramm im Graphviz DOT-Format, das den Prozess zur Entwicklung von: {st.session_state.current_question} beschreibt. Zeige Start, Prozess-Schritte (Rechtecke) und mindestens 2 Entscheidungswege (Rauten 'shape=diamond'). Antworte NUR mit dem DOT-Code."
+                    graph_prompt = f"Erstelle ein detailliertes Flussdiagramm im Graphviz DOT-Format, das den Entwicklungsprozess für: {st.session_state.current_question} beschreibt. Zeige Start, Schritte und Entscheidungen. Antworte NUR mit dem DOT-Code."
                 
                 dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
                 
-                # Filter: Falls Gemini aus Versehen ```dot an den Anfang schreibt, schneiden wir das ab!
                 if "```" in dot_code:
                     try:
                         dot_code = dot_code.split("```")[1]
@@ -207,5 +213,42 @@ if st.session_state.ai_answer:
                     except:
                         pass
                 
-                # Zeichnet das detaillierte Diagramm
                 st.graphviz_chart(dot_code)
+                
+                # --- NEU: DOWNLOAD FÜR DAS DIAGRAMM ---
+                st.download_button(
+                    label="📥 Diagramm-Code (DOT) speichern",
+                    data=dot_code,
+                    file_name="innova_architektur.dot",
+                    mime="text/plain",
+                    help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
+                )
+
+
+# --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
+if st.session_state.show_inspiration:
+    st.markdown("""
+        <style>
+        .inspiration-box {
+            background-color: #162447;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #FFD700;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
+    
+    with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
+        suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
+        prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
+        st.markdown("**Verfügbare Prompts :**")
+        
+        if not prompts_aus_db:
+            st.caption("Keine passenden Prompts gefunden.")
+        else:
+            for p in prompts_aus_db:
+                if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
+                    st.session_state.eingabe_text = p
+                    st.rerun()
