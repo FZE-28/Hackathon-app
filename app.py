@@ -100,7 +100,7 @@ if user_frage:
                     # --- NEU: DIE MODUS-WEICHE FÜR GEMINI ---
                     query_for_api = user_frage
                     if brainstorm_mode:
-                        query_for_api = f"WICHTIG: Nutze den kreativen Brainstorming-Modus! Ignoriere den strikten 4-Punkte-Blueprint. Nenne historische Meilensteine und Erfindungen zum Thema '{user_frage}' und brainstorme darauf aufbauend völlig neue, visionäre Schnittstellen und Konzepte für die Zukunft."
+                        query_for_api = f"WICHTIG: Kreativer Brainstorming-Modus! 1. Nenne EINEN historischen Meilenstein zu '{user_frage}' in maximal 2 Sätzen. 2. Biete mir danach exakt 3 radikal neue, visionäre Richtungen als kurze Stichpunkte an, aus denen ich für das weitere Brainstorming wählen kann. Keine langen Texte!"
                     
                     ai_answer = gemini_api.generiere_innova_antwort(query_for_api)
                     
