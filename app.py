@@ -170,13 +170,12 @@ if st.session_state.ai_answer:
         if st.button("Diagramm zeichnen", use_container_width=True):
             with st.spinner(f"Erstelle {diagramm_typ}..."):
                 if "Mindmap" in diagramm_typ:
-                    graph_prompt = f"Erstelle eine detaillierte Mindmap im Graphviz DOT-Format für das Konzept: {st.session_state.current_question}. Erstelle einen zentralen Knoten und fächere ihn in mindestens 4 Kategorien auf. Antworte NUR mit dem DOT-Code (startend mit digraph)."
+                    graph_prompt = f"Graphviz DOT code ONLY for a simple mindmap about: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 10 nodes. No explanation."
                 else:
-                    graph_prompt = f"Erstelle ein detailliertes Flussdiagramm im Graphviz DOT-Format, das den Entwicklungsprozess für: {st.session_state.current_question} beschreibt. Zeige Start, Schritte und Entscheidungen. Antworte NUR mit dem DOT-Code."
+                    graph_prompt = f"Graphviz DOT code ONLY for a very simple flowchart about developing: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 6 steps. No explanation."
                 
                 dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
                 
-                # Robustes Cleanup für Graphviz
                 if "```" in dot_code:
                     try:
                         dot_code = dot_code.split("```")[1]
@@ -185,15 +184,15 @@ if st.session_state.ai_answer:
                     except:
                         pass
                 
-                try:
-                    st.graphviz_chart(dot_code)
-                    
-                    st.download_button(
-                        label="📥 Diagramm-Code (DOT) speichern",
-                        data=dot_code,
-                        file_name="innova_architektur.dot",
-                        mime="text/plain",
-                        help="Diesen Code kannst du auf 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
-                    )
+                st.graphviz_chart(dot_code)
+                
+                # --- DOWNLOAD FÜR DAS DIAGRAMM ---
+                st.download_button(
+                    label="📥 Diagramm-Code (DOT) speichern",
+                    data=dot_code,
+                    file_name="innova_architektur.dot",
+                    mime="text/plain",
+                    help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
+                )
                 except Exception as e:
                     st.error("Die KI hat leider einen ungültigen Diagramm-Code erzeugt. Bitte versuche es noch einmal.")
