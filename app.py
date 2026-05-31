@@ -160,8 +160,7 @@ if st.session_state.ai_answer:
                     st.markdown(f'<img src="{image_url}" width="100%" style="border-radius: 10px; border: 2px solid #ccc;">', unsafe_allow_html=True)
                 except Exception as e:
                     st.error("Bild konnte nicht geladen werden.")
-                
-    # --- RECHTE SPALTE: DIAGRAMME ---
+ # --- RECHTE SPALTE: DIAGRAMME ---
     with col2:
         st.markdown("**🧩 Architektur & Prozess**")
         st.caption("Generiert Code für Mindmaps oder Flussdiagramme.")
@@ -169,30 +168,32 @@ if st.session_state.ai_answer:
         
         if st.button("Diagramm zeichnen", use_container_width=True):
             with st.spinner(f"Erstelle {diagramm_typ}..."):
-                if "Mindmap" in diagramm_typ:
-                    graph_prompt = f"Graphviz DOT code ONLY for a simple mindmap about: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 10 nodes. No explanation."
-                else:
-                    graph_prompt = f"Graphviz DOT code ONLY for a very simple flowchart about developing: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 6 steps. No explanation."
-                
-                dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
-                
-                if "```" in dot_code:
-                    try:
-                        dot_code = dot_code.split("```")[1]
-                        if dot_code.startswith("dot"):
-                            dot_code = dot_code[3:]
-                    except:
-                        pass
-                
-                st.graphviz_chart(dot_code)
-                
-                # --- DOWNLOAD FÜR DAS DIAGRAMM ---
-                st.download_button(
-                    label="📥 Diagramm-Code (DOT) speichern",
-                    data=dot_code,
-                    file_name="innova_architektur.dot",
-                    mime="text/plain",
-                    help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
-                )
-                except Exception as e:
+                try: # <-- HIER FEHLTE DAS TRY!
+                    if "Mindmap" in diagramm_typ:
+                        graph_prompt = f"Graphviz DOT code ONLY for a simple mindmap about: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 10 nodes. No explanation."
+                    else:
+                        graph_prompt = f"Graphviz DOT code ONLY for a very simple flowchart about developing: {st.session_state.current_question}. Format: digraph G {{ ... }}. Max 6 steps. No explanation."
+                    
+                    dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
+                    
+                    # Markdown-Code-Blöcke säubern
+                    if "```" in dot_code:
+                        try:
+                            dot_code = dot_code.split("```")[1]
+                            if dot_code.startswith("dot"):
+                                dot_code = dot_code[3:]
+                        except:
+                            pass
+                    
+                    st.graphviz_chart(dot_code)
+                    
+                    # --- DOWNLOAD FÜR DAS DIAGRAMM ---
+                    st.download_button(
+                        label="📥 Diagramm-Code (DOT) speichern",
+                        data=dot_code,
+                        file_name="innova_architektur.dot",
+                        mime="text/plain",
+                        help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
+                    )
+                except Exception as e: # <-- JETZT PASST DIESES EXCEPT WIEDER PERFEKT DAZU!
                     st.error("Die KI hat leider einen ungültigen Diagramm-Code erzeugt. Bitte versuche es noch einmal.")
