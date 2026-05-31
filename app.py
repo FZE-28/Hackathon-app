@@ -16,11 +16,10 @@ if "cache_hit" not in st.session_state:
     st.session_state.cache_hit = False
 if "bewertung_abgegeben" not in st.session_state:
     st.session_state.bewertung_abgegeben = False
-
-if "show_inspiration" not in st.session_state:
-    st.session_state.show_inspiration = False
 if "eingabe_text" not in st.session_state:
     st.session_state.eingabe_text = ""
+if "run_sidebar_prompt" not in st.session_state:
+    st.session_state.run_sidebar_prompt = None
 
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
@@ -40,7 +39,7 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # --- NEU: CHAT-VERLAUF EXPORTIEREN ---
+    # --- CHAT-VERLAUF EXPORTIEREN ---
     st.markdown("💾 **Session exportieren**")
     chat_export = ""
     for msg in st.session_state.messages:
@@ -58,10 +57,31 @@ with st.sidebar:
     # --- DER BRAINSTORM-SCHALTER ---
     brainstorm_mode = st.toggle("🌌 Brainstorm-Modus aktivieren", help="Wechselt vom strengen Blueprint zu historischer Inspiration und freiem Brainstorming.")
     
+    # --- NEU: INSPIRATION DIREKT IN DER SEITENLEISTE ---
     st.markdown("---")
-    if st.button("💡 Prompt-Inspiration öffnen/schließen", use_container_width=True):
-        st.session_state.show_inspiration = not st.session_state.show_inspiration
-        st.rerun()
+    st.markdown("### 💡 Prompt-Bibliothek")
+    suchbegriff = st.text_input("🔍 Suche in alten Prompts:")
+    
+    prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
+    
+    if not prompts_aus_db:
+        st.caption("Keine Prompts gefunden.")
+    else:
+        # Wir zeigen die Prompts als kleine Buttons an
+        for p in prompts_aus_db:
+            if st.button(f"📄 {p[:35]}...", key=f"btn_{p}", help=p):
+                st.session_state.eingabe_text = p
+                st.rerun()
+                
+    # Wenn ein Prompt angeklickt wurde, zeigen wir ein Editier-Feld!
+    if st.session_state.eingabe_text:
+        st.markdown("**✏️ Prompt anpassen & starten:**")
+        edited_prompt = st.text_area("Hier bearbeiten:", value=st.session_state.eingabe_text, height=120)
+        
+        if st.button("🚀 Aus Seitenleiste starten", type="primary", use_container_width=True):
+            st.session_state.run_sidebar_prompt = edited_prompt
+            st.session_state.eingabe_text = "" # Feld danach wieder aufräumen
+            st.rerun()
 
 
 # 2. Hauptbereich (Haupt-UI)
@@ -76,25 +96,27 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Eingabebereich in einer sauberen Struktur
-st.text_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?", 
-              key="eingabe_text",
-              placeholder="z.B. Wie konzipiere ich ein Kühlsystem für ein medizinisches Exoskelett?")
+# Eingabebereich in einer sauberen Struktur (Design der Partnerin)
+user_frage = st.chat_input("Welche Nischenfrage zur Produktentwicklung möchtest du analysieren?")
 
-start_clicked = st.button("🚀 Analyse starten", type="primary")
-user_frage = st.session_state.eingabe_text
+# --- DER MAGISCHE TRICK FÜR DIE SEITENLEISTE ---
+if st.session_state.run_sidebar_prompt:
+    user_frage = st.session_state.run_sidebar_prompt
+    st.session_state.run_sidebar_prompt = None # Danach direkt wieder leeren
 
-# Wir starten die Analyse nur, wenn der Button geklickt wurde UND ein Text da ist
-if start_clicked and user_frage.strip() != "": 
+if user_frage: 
     with st.chat_message("user"):
         st.markdown(user_frage)
     
     st.session_state.messages.append({"role": "user", "content": user_frage})
     
-    st.session_state.ai_answer = None
-    st.session_state.bewertung_abgegeben = False
-    
-    with st.status("Verarbeite Anfrage...", expanded=True) as status:
+    if user_frage.strip() == "":
+        st.warning("Bitte gib zuerst eine Frage ein.")
+    else:
+        st.session_state.ai_answer = None
+        st.session_state.bewertung_abgegeben = False
+        
+        with st.status("Verarbeite Anfrage...", expanded=True) as status:
             st.write("🧩 Übersetze Frage für die Datenbank...")
             query_embedding = gemini_api.erstelle_vektor(user_frage)
             
@@ -226,32 +248,3 @@ if st.session_state.ai_answer:
                     mime="text/plain",
                     help="Diesen Code kannst du auf Seiten wie 'Graphviz Online' jederzeit wieder in ein Bild verwandeln."
                 )
-
-
-# --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
-if st.session_state.show_inspiration:
-    st.markdown("""
-        <style>
-        .inspiration-box {
-            background-color: #162447;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 3px solid #FFD700;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("💡 **Inspirations-Modus ist AKTIV**")
-    
-    with st.expander("✨ Vorherige Prompts durchsuchen & laden", expanded=True):
-        suchbegriff = st.text_input("🔍 Stichwort-Suche für Prompts:", placeholder="z.B. Exoskelett...")
-        prompts_aus_db = datenbank.hole_alle_prompts(suchbegriff)
-        st.markdown("**Verfügbare Prompts :**")
-        
-        if not prompts_aus_db:
-            st.caption("Keine passenden Prompts gefunden.")
-        else:
-            for p in prompts_aus_db:
-                if st.button(f"📄 {p}", key=f"btn_{p}", use_container_width=True):
-                    st.session_state.eingabe_text = p
-                    st.rerun()
