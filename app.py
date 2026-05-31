@@ -14,6 +14,11 @@ if "cache_hit" not in st.session_state:
 if "bewertung_abgegeben" not in st.session_state:
     st.session_state.bewertung_abgegeben = False
 
+if "show_inspiration" not in st.session_state:
+    st.session_state.show_inspiration = False
+if "eingabe_text" not in st.session_state:
+    st.session_state.eingabe_text = ""
+
 # 1. Layout-Einstellungen & Sidebar (Einstellungs-Panel)
 with st.sidebar:
     st.markdown("### ⚙️ INNOVA Settings")
