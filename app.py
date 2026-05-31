@@ -160,7 +160,8 @@ if st.session_state.ai_answer:
                     st.markdown(f'<img src="{image_url}" width="100%" style="border-radius: 10px; border: 2px solid #ccc;">', unsafe_allow_html=True)
                 except Exception as e:
                     st.error("Bild konnte nicht geladen werden.")
- # --- RECHTE SPALTE: DIAGRAMME ---
+                
+    # --- RECHTE SPALTE: DIAGRAMME ---
     with col2:
         st.markdown("**🧩 Architektur & Prozess**")
         st.caption("Generiert Code für Mindmaps oder Flussdiagramme.")
