@@ -161,8 +161,23 @@ if st.session_state.ai_answer:
     st.markdown("### 🎨 Visual Blueprints Available")
     st.caption("Du kannst dieses Konzept jetzt im Da Vinci Skizzen-Stil visualisieren lassen.")
     
-    if st.button("📦 Da Vinci Blueprint generieren"):
-        st.code("Leonardo da Vinci Skizze eines medizinischen Exoskeletts, Sepia, detaillierte Mechanik, fotorealistische Schraffur")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📦 Da Vinci Blueprint (Text)"):
+            st.code("Leonardo da Vinci Skizze, Sepia, detaillierte Mechanik, fotorealistische Schraffur: " + st.session_state.current_question)
+            
+    with col2:
+        if st.button("🧩 Als Mindmap visualisieren"):
+            with st.spinner("Zeichne Architektur..."):
+                # Wir schicken einen geheimen Prompt an Gemini, um Graphviz-Code zu bekommen
+                graph_prompt = f"Erstelle ein einfaches Mindmap/Flussdiagramm im Graphviz DOT-Format für folgendes Konzept: {st.session_state.current_question}. Antworte NUR mit dem reinen DOT-Code (startend mit 'digraph G {{'), ohne Markdown-Blöcke oder Erklärungen."
+                
+                # Wir nutzen eure bestehende Gemini-Funktion für die API-Anfrage
+                dot_code = gemini_api.generiere_innova_antwort(graph_prompt)
+                
+                # Zeichnet das Diagramm nativ in Streamlit!
+                st.graphviz_chart(dot_code)
 
 
 # --- NEUES FEATURE: BRAINSTORM & INSPIRATION PANEL (RECHTS) ---
